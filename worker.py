@@ -21,10 +21,7 @@ load_dotenv()
 
 # For local development, we use the Azure Service Bus emulator connection string
 SERVICE_BUS_CONNECTION_STR = os.getenv("SERVICE_BUS_CONNECTION_STRING")
-# Run the following to create the queue:
-# asb-emulator queues create leads
 QUEUE_NAME = "leads"
-
 INTERVAL_SECONDS = int(os.getenv("INTERVAL")) 
 
 
@@ -38,6 +35,7 @@ def insert_lead(conn):
     lname = random.choice(["Doe", "Smith", "Lee", "Patel"])
     email = f"{fname.lower()}.{lname.lower()}@example.com"
     phone = "123-456-7890"
+    
     # Used AI for a variety of options; in production we might refer to vehicles with IDs and a vehicles table, but for testing we can keep it simple
     vehicle = random.choice([
         # Economy / Compact

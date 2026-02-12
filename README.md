@@ -1,8 +1,10 @@
 # Lead Intake Worker Simulator
 
-This project simulates incoming “lead” messages by publishing them to an Azure Service Bus **Emulator** queue every few seconds. It is designed for local development and simulating new leads for downstream processing without needing a real Azure Service Bus namespace.
+## Example Message
 
----
+```bash
+Message: {'lead_id': 'lead_789052', 'conversation_id': 'conv_4da3e5', 'fname': 'Alice', 'lname': 'Lee', 'email': 'alice.lee@example.com', 'vehicle': '2020 Nissan Leaf SV', 'notes': 'Wants to confirm if the vehicle has remote start', 'created_at': '2026-02-12T16:33:38.394236'}
+```
 
 ## Setting Up a Python `.venv`
 
