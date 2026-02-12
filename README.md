@@ -73,7 +73,7 @@ INTERVAL=10
 From the project root:
 
 ```bash
-docker compose up
+docker compose up -d
 ```
 
 This launches:
@@ -81,15 +81,6 @@ This launches:
 - SQL Server (required by the emulator)
 - Azure Service Bus Emulator
 - Loads your `config.json` (including the `leads` queue)
-
-You should see logs like:
-
-```
-ServiceBus Emulator is Successfully Up!
-Creating queue: leads
-```
-
-If you don’t see `Creating queue: leads`, your config.json path is wrong.
 
 ---
 
