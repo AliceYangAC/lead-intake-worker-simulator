@@ -13,4 +13,4 @@ with client:
     with receiver:
         messages = receiver.peek_messages(max_message_count=10)
         for msg in messages:
-            print("Message:", msg)
+            print("Message:", msg, "\n-------------------------------")

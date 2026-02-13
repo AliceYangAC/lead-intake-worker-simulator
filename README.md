@@ -2,38 +2,36 @@
 
 ## Example Message
 
-```JSON
+```json
 {
-    'lead_id': 837810, 
-    'conversation_id': '707', 
-    'fname': 'Maria', 
-    'lname': 'Patel', 
-    'email': 'maria.patel@example.com', 
-    'vehicle': 
-        {
-            'dealership': 
-                {
-                    'name': 'Regina Premium Autos', 
-                    'email': 'contact@reginapremiumautos.com', 
-                    'phone': '555-666-1479', 
-                    'address1': '746 Main St', 
-                    'address2': '', 
-                    'city': 'Regina', 
-                    'province': 'BC', 
-                    'postal_code': 'A7E 4G9'
-                },
-            'status': 0, 
-            'year': 2014, 
-            'make': 'Mazda', 
-            'model': 'CX-5', 
-            'trim': 'Signature', 
-            'mileage': '147060 km', 
-            'transmission': 'CVT', 
-            'comments': 'Excellent condition.', 
-            'category': 'SUVs / Crossovers'
-        }, 
-    'notes': 'Wants to reserve the vehicle with a deposit', 
-    'created_at': '2026-02-13T11:12:33.522217'
+    "lead_id": 607,
+    "conversation_id": 433,
+    "fname": "Alice",
+    "lname": "Lee",
+    "email": "alice.lee@example.com",
+    "vehicle": {
+        "dealership": {
+            "name": "Volkswagen Direct Montreal",
+            "email": "contact@volkswagendirectmontreal.com",
+            "phone": "555-708-2405",
+            "address1": "295 Main St",
+            "address2": "",
+            "city": "Montreal",
+            "province": "SK",
+            "postal_code": "A7J 1H8"
+        },
+        "status": 1,
+        "year": 2022,
+        "make": "Volkswagen",
+        "model": "Jetta",
+        "trim": "Highline",
+        "mileage": "30415 km",
+        "transmission": "CVT",
+        "comments": "",
+        "category": "Sedans"
+    },
+    "notes": "Can you confirm the appointment time? You can reach me at 123-456-7890.",
+    "created_at": "2026-02-13T11:41:55.626861"
 }
 ```
 

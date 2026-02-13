@@ -206,52 +206,87 @@ def generate_vehicle():
         "category": category  
     }
 
+def generate_notes(fname, lname, email, phone):
+    # Customer-submitted, natural-language contact form messages
+    normal_notes = [
+        "Hi, I'm just checking if this vehicle is still available.",
+        "Can someone tell me what financing options you offer?",
+        "I'm thinking about trading in my current car and want to know the process.",
+        "I'd like to book a test drive sometime this week.",
+        "I'm comparing this model with a few others and need more details.",
+        "Can you tell me about the maintenance history?",
+        "Has this vehicle ever been in an accident?",
+        "What would be the total price including all fees?",
+        "Is the manufacturer warranty still active?",
+        "What would monthly payments look like?",
+        "Do you have more interior photos or maybe a video?",
+        "Do you offer delivery? I'm not in the same city.",
+        "Is the price negotiable at all?",
+        "What color options do you have?",
+        "Does this model support Apple CarPlay or Android Auto?",
+        "Are winter tires included?",
+        "Do you accept cryptocurrency for payment?",
+        "I'm worried about my credit score — can I still get approved?",
+        "Do you offer extended warranty packages?",
+        "Can I put down a deposit to hold the vehicle?",
+        "Do you know anything about the previous owner?",
+        "Can this vehicle tow a small trailer?",
+        "Any idea what insurance might cost?",
+        "Can I bring my mechanic to check it out?",
+        "I'm looking for something safe for my family — how does this rate?",
+        "Do you offer student or military discounts?",
+        "I'm upgrading from my current car — any recommendations?",
+        "What's the difference between the hybrid and gas versions?",
+        "Does this model have remote start?",
+        "I'm hoping to buy quickly — can we prep paperwork ahead of time?",
+    ]
+
+    # Synthetic PII not self-referential to the lead
+    synthetic_pii = [
+        f"My other email is test.user{random.randint(10,99)}@example.com if that's easier.",
+        f"You can call me back at 555-{random.randint(100,999)}-{random.randint(1000,9999)}.",
+        f"My temporary address is {random.randint(10,999)} Maple Street.",
+        f"I might register the car under my partner's name, Alex Johnson.",
+        f"My trade-in VIN is 1HGCM82633A{random.randint(100000,999999)}.",
+        f"My driver's license number is D{random.randint(100,999)}-{random.randint(100,999)}-{random.randint(100,999)}.",
+        f"My plate number is ABCD {random.randint(100,999)} if you need it for insurance.",
+        f"Please send the paperwork to temp.email{random.randint(1,9)}@mailinator.com.",
+    ]
+
+    # Lead-specific PII contamination (customer re-entering their own info)
+    self_pii_notes = [
+        f"Hi, it's {fname} {lname}. Just wanted to follow up.",
+        f"You can email me at {email} with the details.",
+        f"My phone number is {phone} if you need to reach me.",
+        f"Hey, this is {fname}. Can someone call me back?",
+        f"I prefer texts — {phone} is the best number.",
+        f"Please send the quote to {email}.",
+        f"I'm {fname} {lname}, just checking on the status of my inquiry.",
+        f"Can you confirm the appointment time? You can reach me at {phone}.",
+        f"Feel free to send photos or documents to {email}.",
+    ]
+
+    # Weighted mix: 50% normal, 10% synthetic PII, 40% self-referential PII
+    weighted_pool = (
+        normal_notes * 5 +
+        synthetic_pii * 1 +
+        self_pii_notes * 4
+    )
+
+    return random.choice(weighted_pool)
 
 def insert_lead(conn):
-    lead_id = random.randint(1, 999999)
+    lead_id = random.randint(1, 999)
     fname = random.choice(["John", "Alice", "Maria", "David"])
     lname = random.choice(["Doe", "Smith", "Lee", "Patel"])
     email = f"{fname.lower()}.{lname.lower()}@example.com"
     phone = "123-456-7890"
-    
+    notes = generate_notes(fname, lname, email, phone)
     # For testing, we can generate a vehicle object even if we aren't inserting into the DB, since the Service Bus message will include it and the downstream consumer can handle it accordingly. In production, we would want to ensure the vehicle is created in the DB first and we have a valid vehicle_id to reference.
     vehicle = generate_vehicle()
     
     status = 0 # New lead
     wants_email = random.choice([True, False])
-    # Used AI to generate a variety of notes for context testing
-    notes = random.choice([
-        "Interested in availability",
-        "Wants financing options",
-        "Asked about trade-in",
-        "Looking to schedule a test drive this week",
-        "Wants to compare this model with similar vehicles",
-        "Concerned about mileage and maintenance history",
-        "Asking whether the vehicle has been in any accidents",
-        "Wants to know total out-the-door pricing",
-        "Checking if the vehicle is still under manufacturer warranty",
-        "Interested in monthly payment estimates",
-        "Wants to see interior photos or a video walkthrough",
-        "Asking about delivery options for out-of-town buyers",
-        "Wants to negotiate the listed price",
-        "Inquiring about available color options",
-        "Wants to confirm if the vehicle supports Apple CarPlay/Android Auto",
-        "Asking whether winter tires are included",
-        "Wants to know if the dealership accepts cryptocurrency",
-        "Concerned about credit score and financing approval",
-        "Asking if extended warranty packages are available",
-        "Wants to reserve the vehicle with a deposit",
-        "Inquiring about previous owner history",
-        "Wants to know if the vehicle can tow a small trailer",
-        "Asking about insurance cost estimates",
-        "Wants to bring a mechanic to inspect the vehicle",
-        "Looking for a family-friendly vehicle with good safety ratings",
-        "Asking if the dealership offers student or military discounts",
-        "Wants to upgrade from their current vehicle and needs recommendations",
-        "Asking about hybrid vs. gas model differences",
-        "Wants to confirm if the vehicle has remote start",
-        "Looking for a quick purchase and wants paperwork prepared in advance",
-    ])
     created_at = datetime.now()
 
     # with conn.cursor() as cur:
@@ -280,7 +315,7 @@ def insert_lead(conn):
 
 
 def create_conversation(conn, lead_id):
-    conversation_id = f"{random.randint(0, 999):03d}"
+    conversation_id = random.randint(1, 999)
     now = datetime.now()
 
     with conn.cursor() as cur:
@@ -321,7 +356,7 @@ def simulate_worker():
             lead = insert_lead(conn)
             
             # For testing, we can generate a conversation ID even if we aren't inserting into the DB, since the Service Bus message will include it and the downstream consumer can handle it accordingly. In production, we would want to ensure the conversation is created in the DB first.
-            conversation_id = f"{random.randint(0, 999):03d}"
+            conversation_id = random.randint(1, 999) if lead["wants_email"] else None
 
             # Create conversation if needed
             # conversation_id = None
