@@ -24,84 +24,158 @@ SERVICE_BUS_CONNECTION_STR = os.getenv("SERVICE_BUS_CONNECTION_STRING")
 QUEUE_NAME = "leads"
 INTERVAL_SECONDS = int(os.getenv("INTERVAL")) 
 
+VEHICLE_OPTIONS = {
+    "Economy / Compact": [
+        ("Honda", "Fit", "LX"),
+        ("Toyota", "Corolla", "LE"),
+        ("Hyundai", "Elantra", "Preferred"),
+        ("Kia", "Forte", "EX"),
+        ("Mazda", "Mazda3", "Sport"),
+        ("Volkswagen", "Golf", "Trendline"),
+        ("Ford", "Focus", "SE"),
+        ("Nissan", "Sentra", "SV"),
+    ],
+
+    "Sedans": [
+        ("Honda", "Accord", "Touring"),
+        ("Toyota", "Camry", "XSE"),
+        ("Nissan", "Altima", "SV"),
+        ("Hyundai", "Sonata", "Hybrid"),
+        ("Volkswagen", "Jetta", "Highline"),
+        ("Subaru", "Legacy", "Limited"),
+        ("Mazda", "Mazda6", "GS"),
+        ("Kia", "Stinger", "GT-Line"),
+    ],
+
+    "SUVs / Crossovers": [
+        ("Toyota", "RAV4", "XLE"),
+        ("Honda", "CR-V", "EX-L"),
+        ("Mazda", "CX-5", "Signature"),
+        ("Hyundai", "Tucson", "Preferred"),
+        ("Ford", "Escape", "Titanium"),
+        ("Subaru", "Forester", "Touring"),
+        ("Nissan", "Rogue", "SL"),
+        ("Chevrolet", "Equinox", "LT"),
+    ],
+
+    "Pickup Trucks": [
+        ("Ford", "F-150", "XLT"),
+        ("RAM", "1500", "Big Horn"),
+        ("Chevrolet", "Silverado", "LTZ"),
+        ("Toyota", "Tacoma", "TRD Sport"),
+        ("GMC", "Sierra", "Elevation"),
+        ("Nissan", "Frontier", "PRO-4X"),
+        ("Ford", "Ranger", "Lariat"),
+        ("Honda", "Ridgeline", "Black Edition"),
+    ],
+
+    "EVs / Hybrids": [
+        ("Tesla", "Model 3", "Long Range"),
+        ("Nissan", "Leaf", "SV"),
+        ("Hyundai", "Ioniq 5", "Preferred AWD"),
+        ("Toyota", "Prius Prime", "Upgrade"),
+        ("Ford", "Mustang Mach-E", "Premium"),
+        ("Kia", "EV6", "Wind AWD"),
+        ("Volkswagen", "ID.4", "Pro"),
+        ("Chevrolet", "Bolt", "Premier"),
+    ],
+
+    "Luxury": [
+        ("BMW", "330i", "xDrive"),
+        ("Mercedes-Benz", "C300", "4MATIC"),
+        ("Audi", "Q5", "Technik"),
+        ("Lexus", "RX 350", "Luxury"),
+        ("Volvo", "XC90", "Inscription"),
+        ("Acura", "RDX", "A-Spec"),
+        ("Infiniti", "QX50", "Sensory"),
+        ("Genesis", "GV70", "Advanced"),
+    ],
+
+    "Sports / Performance": [
+        ("Ford", "Mustang", "GT"),
+        ("Subaru", "WRX", "STI"),
+        ("Chevrolet", "Camaro", "SS"),
+        ("Dodge", "Challenger", "R/T"),
+        ("Toyota", "GR86", "Premium"),
+        ("Nissan", "370Z", "Sport"),
+        ("BMW", "M2", "Competition"),
+        ("Porsche", "718 Cayman", "Base"),
+    ],
+
+    "Budget / Older Vehicles": [
+        ("Honda", "Civic", "LX"),
+        ("Toyota", "Camry", "LE"),
+        ("Ford", "Escape", "SE"),
+        ("Hyundai", "Santa Fe", "GLS"),
+        ("Mazda", "Mazda6", "GS"),
+        ("Chevrolet", "Impala", "LT"),
+        ("Nissan", "Altima", "S"),
+        ("Kia", "Rio", "LX"),
+    ],
+
+    "High-End / Aspirational": [
+        ("Porsche", "Macan", "S"),
+        ("BMW", "X5", "xDrive40i"),
+        ("Mercedes-Benz", "GLE", "450"),
+        ("Land Rover", "Range Rover Velar", "R-Dynamic"),
+        ("Tesla", "Model S", "Plaid"),
+        ("Audi", "A7", "Prestige"),
+        ("Lexus", "LS 500", "Executive"),
+        ("Maserati", "Levante", "GranSport"),
+    ],
+}
+
 
 def get_db_connection():
     return psycopg2.connect(**DB_CONFIG)
 
+def generate_vehicle():
+    # Pick a random category, then a random vehicle tuple
+    category = random.choice(list(VEHICLE_OPTIONS.keys()))
+    make, model, trim = random.choice(VEHICLE_OPTIONS[category])
+
+    vehicle_id = random.randint(1, 999999)
+    dealer_id = random.randint(1, 200)
+
+    year = random.randint(2000, 2026)
+
+    return {
+        "vehicle_id": vehicle_id,
+        "dealer_id": dealer_id,
+        "stock_id": f"STK-{random.randint(1000,9999)}",
+        "status": random.choice([0, 1]),  # new / used
+        "year": year,
+        "vin": str(uuid.uuid4())[:17].upper(),
+        "make": make,
+        "model": model,
+        "trim": trim,
+        "mileage": f"{random.randint(20_000, 250_000)} km",
+        "transmission": random.choice(["Automatic", "Manual", "CVT"]),
+        "comments": random.choice([
+            "Clean CarFax, one owner.",
+            "Dealer maintained.",
+            "Low mileage for the year.",
+            "Certified pre-owned.",
+            "Excellent condition.",
+            "Minor cosmetic wear.",
+            "Fully loaded with premium package.",
+            "Recently serviced and detailed.",
+        ]),
+        "category": category  # optional but nice for debugging
+    }
+
 
 def insert_lead(conn):
-    lead_id = f"{random.randint(0, 999):03d}"
+    lead_id = random.randint(1, 999999)
     fname = random.choice(["John", "Alice", "Maria", "David"])
     lname = random.choice(["Doe", "Smith", "Lee", "Patel"])
     email = f"{fname.lower()}.{lname.lower()}@example.com"
     phone = "123-456-7890"
     
-    # Used AI for a variety of options; in production we might refer to vehicles with IDs and a vehicles table, but for testing we can keep it simple
-    vehicle = random.choice([
-        # Economy / Compact
-        "2018 Honda Fit",
-        "2020 Toyota Corolla",
-        "2019 Hyundai Elantra",
-        "2021 Kia Forte",
-        "2017 Mazda3 Sport",
-
-        # Sedans
-        "2020 Honda Accord Touring",
-        "2021 Toyota Camry XSE",
-        "2019 Nissan Altima SV",
-        "2022 Hyundai Sonata Hybrid",
-        "2020 Volkswagen Jetta Highline",
-
-        # SUVs / Crossovers
-        "2021 Toyota RAV4 XLE",
-        "2020 Honda CR-V EX-L",
-        "2019 Mazda CX-5 Signature",
-        "2022 Hyundai Tucson Preferred",
-        "2021 Ford Escape Titanium",
-
-        # Pickup Trucks
-        "2020 Ford F-150 XLT",
-        "2021 RAM 1500 Big Horn",
-        "2019 Chevrolet Silverado LTZ",
-        "2022 Toyota Tacoma TRD Sport",
-        "2020 GMC Sierra Elevation",
-
-        # EVs / Hybrids
-        "2021 Tesla Model 3 Long Range",
-        "2020 Nissan Leaf SV",
-        "2022 Hyundai Ioniq 5 Preferred AWD",
-        "2021 Toyota Prius Prime",
-        "2022 Ford Mustang Mach-E Premium",
-
-        # Luxury
-        "2019 BMW 330i xDrive",
-        "2020 Mercedes-Benz C300 4MATIC",
-        "2021 Audi Q5 Technik",
-        "2020 Lexus RX 350",
-        "2018 Volvo XC90 Inscription",
-
-        # Sports / Performance
-        "2019 Ford Mustang GT",
-        "2020 Subaru WRX STI",
-        "2021 Chevrolet Camaro SS",
-        "2018 Dodge Challenger R/T",
-        "2022 Toyota GR86 Premium",
-
-        # Budget / Older Vehicles
-        "2012 Honda Civic LX",
-        "2010 Toyota Camry LE",
-        "2013 Ford Escape SE",
-        "2011 Hyundai Santa Fe GLS",
-        "2014 Mazda6 GS",
-
-        # High-End / Aspirational
-        "2021 Porsche Macan S",
-        "2020 BMW X5 xDrive40i",
-        "2019 Mercedes-Benz GLE 450",
-        "2022 Range Rover Velar R-Dynamic",
-        "2021 Tesla Model S Plaid",
-    ])
-
+    # For testing, we can generate a vehicle object even if we aren't inserting into the DB, since the Service Bus message will include it and the downstream consumer can handle it accordingly. In production, we would want to ensure the vehicle is created in the DB first and we have a valid vehicle_id to reference.
+    vehicle = generate_vehicle()
+    
+    status = 0 # New lead
     wants_email = random.choice([True, False])
     # Used AI to generate a variety of notes for context testing
     notes = random.choice([
@@ -155,6 +229,7 @@ def insert_lead(conn):
         "lname": lname,
         "email": email,
         "phone": phone,
+        "status": status,
         "vehicle": vehicle,
         "wants_email": wants_email,
         "notes": notes,

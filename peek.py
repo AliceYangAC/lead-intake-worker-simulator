@@ -14,4 +14,3 @@ with client:
         messages = receiver.peek_messages(max_message_count=10)
         for msg in messages:
             print("Message:", msg)
-            print("Body:", str(msg))

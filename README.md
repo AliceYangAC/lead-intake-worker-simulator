@@ -3,7 +3,7 @@
 ## Example Message
 
 ```bash
-Message: {'lead_id': '789', 'conversation_id': '435', 'fname': 'Alice', 'lname': 'Lee', 'email': 'alice.lee@example.com', 'vehicle': '2020 Nissan Leaf SV', 'notes': 'Wants to confirm if the vehicle has remote start', 'created_at': '2026-02-12T16:33:38.394236'}
+Message: {'lead_id': 73366, 'conversation_id': '410', 'fname': 'David', 'lname': 'Patel', 'email': 'david.patel@example.com', 'vehicle': {'vehicle_id': 382591, 'dealer_id': 148, 'stock_id': 'STK-8345', 'status': 0, 'year': 2013, 'vin': '6B7C7237-7D98-4DC', 'make': 'Nissan', 'model': 'Altima', 'trim': 'S', 'mileage': '179224 km', 'transmission': 'Manual', 'comments': 'Fully loaded with premium package.', 'category': 'Budget / Older Vehicles'}, 'notes': 'Asked about trade-in', 'created_at': '2026-02-13T11:01:32.083453'}
 ```
 
 ## Set up `.venv`
