@@ -385,19 +385,19 @@ def simulate_worker():
             # if lead["wants_email"]:
             #     conversation_id = create_conversation(conn, lead["lead_id"])
 
-            # Publish to Service Bus
-            publish_payload = {
-                "lead_id": lead["lead_id"],
-                "conversation_id": conversation_id,
-                "fname": lead["fname"],
-                "lname": lead["lname"],
-                "email": lead["email"],
-                "vehicle": lead["vehicle"],
-                "notes": lead["notes"],
-                "created_at": lead["created_at"],
-            }
-
-            publish_to_service_bus(publish_payload)
+            # Publish to Service Bus if we have a conversation ID (indicating the lead wants emails and we want to process it)
+            if conversation_id:
+                publish_payload = {
+                    "lead_id": lead["lead_id"],
+                    "conversation_id": conversation_id,
+                    "fname": lead["fname"],
+                    "lname": lead["lname"],
+                    "email": lead["email"],
+                    "vehicle": lead["vehicle"],
+                    "notes": lead["notes"],
+                    "created_at": lead["created_at"],
+                }
+                publish_to_service_bus(publish_payload)
 
             #conn.close()
 
