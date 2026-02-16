@@ -8,26 +8,18 @@ from azure.servicebus import ServiceBusClient, ServiceBusMessage
 import os
 from dotenv import load_dotenv
 
-DB_CONFIG = {
-    "dbname": "postgres",
-    "user": "postgres",
-    "password": "local",
-    "host": "localhost",
-    "port": 5432,
-}
-
-# Load environment variables from .env file
+# load environment variables from .env file
 load_dotenv()
 
 
-# For local development, we use the Azure Service Bus emulator connection string
+# for local development, we use the service bus emulator connection string
 SERVICE_BUS_CONNECTION_STR = os.getenv("SERVICE_BUS_CONNECTION_STRING")
 QUEUE_NAME = "leads"
 
-# How often to generate a new lead (in seconds)
+# how often to generate a new lead (in seconds)
 INTERVAL_SECONDS = int(os.getenv("INTERVAL")) 
 
-# Ratio of notes that include PII (between 0 and 1)
+# ratio of notes that include PII (between 0 and 1)
 PII_RATIO = float(os.getenv("NOTES_PII_RATIO", "0.5"))
 PII_RATIO = max(0.0, min(1.0, PII_RATIO)) 
 
@@ -155,12 +147,11 @@ PROVINCES = [
     "ON", "BC", "AB", "QC", "MB", "NS", "SK"
 ]
 
+# utility function to generate unique IDs with a prefix
 def new_id(prefix):
     return f"{prefix}_{uuid.uuid4().hex[:10]}"
 
-def get_db_connection():
-    return psycopg2.connect(**DB_CONFIG)
-
+# function to generate random dealership based on the make of the vehicle and random city/province
 def generate_dealership(make):
     dealer_id = new_id("dealer")
     city = random.choice(CITIES)
@@ -181,19 +172,16 @@ def generate_dealership(make):
         "postal_code": f"{random.choice('ABCEGHJ')}{random.randint(1,9)}{random.choice('ABCEGHJ')} {random.randint(1,9)}{random.choice('ABCEGHJ')}{random.randint(1,9)}"
     }
 
+# function to generate random vehicle based on the VEHICLE_OPTIONS
 def generate_vehicle():
-    # Pick a random category, then a random vehicle tuple
+    # pick a random category, then a random vehicle from that category
     category = random.choice(list(VEHICLE_OPTIONS.keys()))
     make, model, trim = random.choice(VEHICLE_OPTIONS[category])
-
-    # Mock dealership lookup
-    dealership = generate_dealership(make)
     
     year = random.randint(2000, 2026)
 
     return {
         "id": new_id("vehicle"),
-        "dealership": dealership,
         "status": random.choice([0, 1]),  # new/used
         "year": year,
         "make": make,
@@ -216,6 +204,8 @@ def generate_vehicle():
         ])
     }
 
+# function to generate random notes for the lead, with a mix of normal questions/comments and synthetic PII
+# so we can test sanitizing it
 def generate_notes(fname, lname, email, phone):
     normal_notes = [
         "Hi, I'm just checking if this vehicle is still available.",
@@ -250,7 +240,7 @@ def generate_notes(fname, lname, email, phone):
         "I'm hoping to buy quickly — can we prepare the paperwork for this car ahead of time?",
     ]
 
-    # Synthetic PII 
+    # synthetic PII 
     synthetic_pii = [
         f"My other email is test.user{random.randint(10,99)}@example.com if you need to send more details about this car.",
         f"You can call me back at 555-{random.randint(100,999)}-{random.randint(1000,9999)} about this vehicle.",
@@ -262,7 +252,7 @@ def generate_notes(fname, lname, email, phone):
         f"Please send the paperwork for this car to temp.email{random.randint(1,9)}@mailinator.com.",
     ]
 
-    # Lead-specific PII
+    # lead-specific PII
     self_pii_notes = [
         f"Hi, it's {fname} {lname}. I'm following up about this vehicle.",
         f"You can email me at {email} with more details about this car.",
@@ -278,47 +268,34 @@ def generate_notes(fname, lname, email, phone):
     pii_pool = synthetic_pii + self_pii_notes
     weighted_pool = []
 
-    # Number of entries to generate for each category
-    # Using len(normal_notes) keeps the distribution stable
+    # number of entries to generate for each category
     total = len(normal_notes)
 
     normal_count = int(total * (1 - PII_RATIO))
     pii_count = int(total * PII_RATIO)
 
-    # Add normal-only notes
+    # add normal-only notes
     weighted_pool.extend(random.sample(normal_notes, normal_count))
 
-    # Add normal+PII notes
+    # add normal+PII notes
     for note in random.sample(normal_notes, pii_count):
         weighted_pool.append(note + " " + random.choice(pii_pool))
 
-    # Fallback if ratio is weird (eg, 0 or 1)
+    # fallback if ratio is weird (eg, 0 or 1)
     if not weighted_pool:
         weighted_pool.append(random.choice(normal_notes))
 
     return random.choice(weighted_pool)
 
-def generate_lead(conn):
+# function to generate random lead 
+def generate_lead():
     lead_id = new_id("lead")
     fname = random.choice(["John", "Alice", "Maria", "David"])
     lname = random.choice(["Doe", "Smith", "Lee", "Patel"])
     email = f"{fname.lower()}.{lname.lower()}@example.com"
     phone = f"555-{random.randint(100,999)}-{random.randint(1000,9999)}"
     notes = generate_notes(fname, lname, email, phone)
-    # For testing, we can generate a vehicle object even if we aren't inserting into the DB, since the Service Bus message will include it and the downstream consumer can handle it accordingly. In production, we would want to ensure the vehicle is created in the DB first and we have a valid vehicle_id to reference.
-    vehicle = generate_vehicle()
-
-    # with conn.cursor() as cur:
-    #     cur.execute(
-    #         """
-    #         INSERT INTO leads (lead_id, fname, lname, email, phone, vehicle, wants_email, notes, created_at)
-    #         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
-    #         """,
-    #         (lead_id, fname, lname, email, phone, vehicle, wants_email, notes, created_at),
-    #     )
-    #     conn.commit()
-
-    # print(f"[DB] Inserted lead: {lead_id}")
+    
     return {
         "id": lead_id,
         "fname": fname,
@@ -327,30 +304,11 @@ def generate_lead(conn):
         "phone": phone,
         "status": 0,
         "wants_email": random.choice([True, False]),
-        "vehicle": vehicle,
         "notes": notes,
         "timestamp": datetime.now().isoformat(),
     }
 
-
-def create_conversation(conn, lead_id):
-    conversation_id = random.randint(1, 999)
-    now = datetime.now().isoformat()
-
-    with conn.cursor() as cur:
-        cur.execute(
-            """
-            INSERT INTO conversations (conversation_id, lead_id, status, created_at, last_updated)
-            VALUES (%s,%s,%s,%s,%s)
-            """,
-            (conversation_id, lead_id, 1, now, now),
-        )
-        conn.commit()
-
-    print(f"[DB] Created conversation: {conversation_id}")
-    return conversation_id
-
-
+# function to publish the generated lead + vehicle + dealership to the service bus
 def publish_to_service_bus(payload):
     client = ServiceBusClient.from_connection_string(conn_str=SERVICE_BUS_CONNECTION_STR)
     sender = client.get_queue_sender(queue_name=QUEUE_NAME)
@@ -361,66 +319,33 @@ def publish_to_service_bus(payload):
 
     print(f"[SB] Published message for lead: {payload['lead']['id']}")
 
-
+# main worker function to simulate lead generation and publishing to service bus at regular intervals
 def simulate_worker():
     print("Starting lead simulation worker...")
     print(f"Interval: {INTERVAL_SECONDS} seconds\n")
 
     while True:
         try:
-            conn = None
-            # conn = get_db_connection()
 
             # generate lead
-            lead = generate_lead(conn)
+            lead = generate_lead()
             
-            # For testing, we can generate a conversation ID even if we aren't inserting into the DB, since the Service Bus message will include it and the downstream consumer can handle it accordingly. In production, we would want to ensure the conversation is created in the DB first.
-            conversation_id = new_id("conv") if lead["wants_email"] else None
+            # generate vehicle + dealership (dealership depends on vehicle make)
+            vehicle = generate_vehicle()
+            dealership = generate_dealership(vehicle["make"])
 
-            # Create conversation if needed
-            # conversation_id = None
-            # if lead["wants_email"]:
-            #     conversation_id = create_conversation(conn, lead["lead_id"])
+            # generate conversation ID
+            conversation_id = new_id("conv")
+            
+            # publish to service bus
+            payload = {
+                "lead": lead,
+                "vehicle": vehicle,
+                "dealership": dealership,
+                "conversationId": conversation_id
+            }
+            publish_to_service_bus(payload)
 
-            # Publish to Service Bus if we have a conversation ID (indicating the lead wants emails and we want to process it)
-            if conversation_id:
-                vehicle = lead["vehicle"]
-                dealership = vehicle["dealership"]
-
-                # Remove dealership from vehicle before publishing
-                vehicle_without_dealer = {k: v for k, v in vehicle.items() if k != "dealership"}
-
-                payload = {
-                    "lead": {
-                        "id": lead["id"],
-                        "fname": lead["fname"],
-                        "lname": lead["lname"],
-                        "email": lead["email"],
-                        "phone": lead["phone"],
-                        "status": lead["status"],
-                        "wants_email": lead["wants_email"],
-                        "notes": lead["notes"],
-                        "timestamp": lead["timestamp"]
-                    },
-                    "vehicle": vehicle_without_dealer,
-                    "dealership": dealership,
-                    "conversationId": conversation_id
-                }
-
-
-                # payload = {
-                #     "lead_id": lead["id"],
-                #     "conversation_id": conversation_id,
-                #     "fname": lead["fname"],
-                #     "lname": lead["lname"],
-                #     "email": lead["email"],
-                #     "vehicle": lead["vehicle"],
-                #     "notes": lead["notes"],
-                #     "created_at": lead["timestamp"],
-                # }
-                publish_to_service_bus(payload)
-
-            #conn.close()
 
         except Exception as e:
             print(f"[ERROR] {e}")
