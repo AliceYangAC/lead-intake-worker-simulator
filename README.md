@@ -72,6 +72,7 @@ Your environment is now ready to run:
 
 - `python worker.py`  
 - `python peek.py`  
+- `python purge.py`
 
 ## Set up your `.env` file
 
@@ -148,9 +149,9 @@ Use the included `peek.py` script to inspect messages without consuming them:
 py peek.py
 ```
 
-This script connects to the emulator and prints the next batch of messages currently in the `leads` queue.
+## Purge the queue (optional)
 
-## Purge the queue 
+Use the included `purge.py` script to purge all messages in the queue:
 
 ```bash
 py purge.py
