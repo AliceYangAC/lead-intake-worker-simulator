@@ -303,7 +303,6 @@ def generate_lead():
         "email": email,
         "phone": phone,
         "status": 0,
-        "wants_email": random.choice([True, False]),
         "notes": notes,
         "timestamp": datetime.now().isoformat(),
     }
